@@ -30,26 +30,28 @@ Each player carries a device. They communicate over **ESP-NOW** (peer-to-peer, n
 
 ```
 main/
-  main.c           – App entry, hardware init
-  game_task.c/h    – Input handling, animations, game flow
-  ui.c/h           – Screen render functions
-  renderer.c/h     – Strip-based framebuffer renderer (3 fonts, clipping)
-  keyboard.c/h     – T9-style on-screen keyboard overlay
-  display.c/h      – GC9A01 SPI display driver (DMA)
-  touch_input.c/h  – CST816D driver (I2C, interrupt + gesture detection)
-  icons.h          – 1bpp icon bitmaps
-  coin_anim.h      – Coin flip animation frames
+  main.c              – App entry, hardware init
+  game_task.c/h       – Input handling, animations, game flow
+  ui.c/h              – Screen render functions
+  renderer.c/h        – Strip-based framebuffer renderer (GFXfont + bitmap fonts, clipping)
+  font_freemonobold.c – FreeMonoBold font wrapper
+  fonts/              – GFXfont .h data files (FreeMonoBold 6-36pt, FreeMono 9pt)
+  keyboard.c/h        – T9-style on-screen keyboard overlay
+  display.c/h         – GC9A01 SPI display driver (DMA)
+  touch_input.c/h     – CST816D driver (I2C, interrupt + gesture detection)
+  icons.h             – 1bpp icon bitmaps
+  coin_anim.h         – Coin flip animation frames
 
 components/jvlt_core/
-  jvlt.h           – Public API (single header)
-  jvlt_init.c      – Entry point, task creation, queues
-  jvlt_nav.c       – Screen state machine
-  jvlt_match.c     – Match session logic
-  jvlt_dice.c      – Dice rolling
-  jvlt_coin.c      – Coin flip
-  jvlt_settings.c  – NVS persistence (name, brightness)
-  jvlt_net.c       – Room/beacon/multiplayer
-  jvlt_comm.c      – ESP-NOW transport
+  jvlt.h              – Public API (single header)
+  jvlt_init.c         – Entry point, task creation, queues
+  jvlt_nav.c          – Screen state machine
+  jvlt_match.c        – Match session logic
+  jvlt_dice.c         – Dice rolling
+  jvlt_coin.c         – Coin flip
+  jvlt_settings.c     – NVS persistence (name, brightness)
+  jvlt_net.c          – Room/beacon/multiplayer
+  jvlt_comm.c         – ESP-NOW transport
 ```
 
 ## FreeRTOS Tasks
@@ -86,7 +88,8 @@ components/jvlt_core/
 | CMD DAMAGE          | Swipe right           | Back to match                 |
 | CMD DAMAGE          | Swipe left            | Poison counter                |
 | CMD DAMAGE OPP      | Tap +/−               | Adjust commander damage       |
-| CMD DAMAGE OPP      | Tap name              | Rename opponent               |
+| CMD DAMAGE OPP      | Tap opponent name      | Rename opponent               |
+| CMD DAMAGE OPP      | Tap commander name     | Rename commander              |
 | CMD DAMAGE OPP      | Swipe right           | Back to damage select         |
 | POISON              | Tap +/−               | Adjust poison (0–10)          |
 | POISON              | Swipe right           | Back to damage select         |

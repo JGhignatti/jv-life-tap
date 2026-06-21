@@ -96,10 +96,12 @@ Icons are 1bpp bitmaps stored separately from the primitive list (they don't cou
 
 | Icon | Size | Bytes | Description |
 |------|------|-------|-------------|
-| `icon_die` | 40×40 | 200 | Small die icon |
+| `icon_die` | 40×40 | 200 | Isometric die icon |
+| `icon_die_60` | 60×60 | 480 | Large isometric die icon |
 | `icon_crossed_swords` | 40×40 | 200 | Commander damage indicator |
 | `icon_coin_small` | 40×40 | 200 | Small coin icon |
 | `icon_user` | 30×30 | 120 | Player/opponent avatar |
+| `icon_user_24` | 24×24 | 72 | Small player/opponent avatar |
 | `icon_die_d4/d6/d8/d12/d20` | 120×120 | 1800 | Large die shape backgrounds |
 | Coin animation frames | 120×120 | 1800 | Coin flip animation (in `coin_anim.h`) |
 
@@ -111,19 +113,39 @@ Icons are 1bpp bitmaps stored separately from the primitive list (they don't cou
 
 ## Fonts
 
-| ID | Constant | Char size | Coverage | Source | Use case |
-|----|----------|-----------|----------|--------|----------|
-| 0 | `FONT_SMALL` | 5×7 | Full ASCII (32–127) | Classic LED matrix | Labels, compact text |
-| 1 | `FONT_BASE` | 8×16 | Full ASCII (32–127) | VGA ROM / CP437 | Default UI text |
-| 2 | `FONT_XLARGE` | 16×32 | Digits + minus only (0–9, `-`) | Terminus-derived | Life counter, dice result |
+Two font systems coexist:
+
+### Fixed-width bitmap font
+
+| ID | Constant | Char size | Coverage | Source |
+|----|----------|-----------|----------|--------|
+| 0 | `FONT_SMALL` | 5×7 | Full ASCII (32–127) | Classic LED matrix |
+
+Column-encoded: each column is a `uint8_t`, bit 0 = top row. Scale multiplies each pixel. 1px gap between characters.
+
+Custom glyph: `\x7F` renders as ▶ (right-pointing triangle).
+
+### GFXfont proportional fonts (Adafruit format)
+
+| ID | Constant | Source | Coverage |
+|----|----------|--------|----------|
+| 1 | `FONT_BASE_6` | FreeMonoBold 6pt | Full ASCII |
+| 2 | `FONT_BASE_9` | FreeMonoBold 9pt | Full ASCII |
+| 3 | `FONT_BASE_12` / `FONT_BASE` | FreeMonoBold 12pt | Full ASCII |
+| 4 | `FONT_BASE_18` | FreeMonoBold 18pt | Full ASCII |
+| 5 | `FONT_BASE_24` | FreeMonoBold 24pt | Full ASCII |
+| 6 | `FONT_BASE_9_N` | FreeMono 9pt (normal) | Full ASCII |
+| 7 | `FONT_BASE_36` | FreeMonoBold 36pt | Digits + minus only |
+
+GFXfont glyphs are variable-width, packed 1bpp horizontal bitmaps with per-glyph offset and advance metadata. The `y` coordinate passed to render functions represents the **top of text** (not baseline).
 
 ### Text rendering details
 
-- **Scale:** The `scale` parameter multiplies each font pixel (scale=2 → each pixel becomes a 2×2 block).
-- **Spacing:** 1px gap between characters, regardless of font or scale.
-- **Pixel width formula:** `text_width = (char_width × scale + 1) × strlen - 1`
-- **Custom glyph:** Character `\x7F` (DEL) renders as a right-pointing triangle (▶) in `FONT_SMALL` and `FONT_BASE`.
-- **String centering:** `ltapp_render_string_centered(y, ...)` computes X to horizontally center the string in the 240px display width.
+- **Scale:** Multiplies each glyph pixel (scale=2 → each pixel becomes 2×2).
+- **GFXfont spacing:** Each character advances by its `xAdvance` value (proportional).
+- **Spaced variants:** `ltapp_render_string_spaced()` / `_spaced_centered()` allow overriding the space character's width for tighter/looser word spacing.
+- **Height:** `ltapp_render_text_height()` returns the max glyph height (visual extent), not yAdvance (line spacing).
+- **`FONT_BASE`** is an alias for `FONT_BASE_12`.
 
 ## Colors
 
@@ -218,9 +240,13 @@ void ltapp_render_vline_dashed(int x, int y, int h, int dash, int gap, uint16_t 
 void ltapp_render_char(int x, int y, char c, uint16_t color, int font, int scale);
 void ltapp_render_string(int x, int y, const char *str, uint16_t color, int font, int scale);
 void ltapp_render_string_centered(int y, const char *str, uint16_t color, int font, int scale);
+void ltapp_render_string_spaced(int x, int y, const char *str, uint16_t color, int font, int scale, int space_w);
+void ltapp_render_string_spaced_centered(int y, const char *str, uint16_t color, int font, int scale, int space_w);
 void ltapp_render_number(int x, int y, int num, uint16_t color, int font, int scale);
 void ltapp_render_number_centered(int y, int num, uint16_t color, int font, int scale);
 ```
+
+The `space_w` parameter overrides the space character's advance width (pixels, before scale). Only affects GFXfont fonts.
 
 ### Icons
 
@@ -233,6 +259,7 @@ void ltapp_render_icon_bg(int x, int y, const uint8_t *bitmap, int w, int h, uin
 
 ```c
 int ltapp_render_text_width(const char *str, int font, int scale);
+int ltapp_render_text_width_spaced(const char *str, int font, int scale, int space_w);
 int ltapp_render_number_width(int num, int font, int scale);
 int ltapp_render_text_height(int font, int scale);
 int ltapp_render_number_height(int font, int scale);

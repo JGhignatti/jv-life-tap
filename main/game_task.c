@@ -13,6 +13,16 @@ static void ltapp_rename_selected_opp(const char *name) {
     }
 }
 
+static void ltapp_rename_cmd_0(const char *name) {
+    const jvlt_match_t *m = jvlt_match_get();
+    if (m) jvlt_match_rename_commander(m->cmd_sel_opp, 0, name);
+}
+
+static void ltapp_rename_cmd_1(const char *name) {
+    const jvlt_match_t *m = jvlt_match_get();
+    if (m) jvlt_match_rename_commander(m->cmd_sel_opp, 1, name);
+}
+
 // --- Life delta toast ---
 static int16_t s_life_delta = 0;
 static uint32_t s_life_delta_tick = 0;
@@ -156,24 +166,24 @@ void ltapp_handle_input(const jvlt_input_event_t *ev) {
     switch (screen) {
     case SCREEN_HOME: {
         if (ev->type == INPUT_TAP) {
-            uint8_t tx = ev->x, ty = ev->y;
-            // Extras circle: cx=192, cy=140, r=53
-            int16_t dx = tx - (LCD_WIDTH - 48);
-            int16_t dy = ty - (LCD_HEIGHT_HALF + 20);
-            if (dx * dx + dy * dy <= 53 * 53)
+            int16_t tx = ev->x, ty = ev->y;
+            // Extras circle: cx≈194, cy≈170, r=52
+            int16_t dx = tx - 194;
+            int16_t dy = ty - 170;
+            if (dx * dx + dy * dy <= 52 * 52)
                 jvlt_set_screen(SCREEN_EXTRAS);
-            // Solo: top menu item
-            else if (ty >= 88 && ty <= 143 && tx <= 160) {
+            // Solo: x∈[0,160], y∈[92,147]
+            else if (ty >= 92 && ty <= 147 && tx <= 160) {
                 if (!jvlt_match_get()) {
                     jvlt_match_begin_solo(3, 40);
                 }
                 jvlt_set_screen(SCREEN_SOLO_SETUP);
             }
-            // Net: second menu item
-            else if (ty >= 146 && ty <= 194 && tx <= 160)
+            // Net: x∈[0,160], y∈[147,202]
+            else if (ty > 147 && ty <= 202 && tx <= 160)
                 jvlt_set_screen(SCREEN_NET_LOBBY);
-            // Settings: bottom area
-            else if (ty >= 200)
+            // Settings: y≥218
+            else if (ty >= 218)
                 jvlt_set_screen(SCREEN_SETTINGS_NAME);
         }
         break;
@@ -222,11 +232,11 @@ void ltapp_handle_input(const jvlt_input_event_t *ev) {
         const jvlt_match_t *m = jvlt_match_get();
         if (ev->type == INPUT_TAP) {
             int16_t ty = ev->y0;
-            // Roll a die: y∈[66,128]
-            if (ty >= 66 && ty <= 128)
+            // Roll a die: y∈[52,112]
+            if (ty >= 52 && ty <= 112)
                 jvlt_set_screen(SCREEN_DICE);
-            // Flip a coin: y∈[132,194]
-            else if (ty >= 132 && ty <= 194)
+            // Flip a coin: y∈[116,176]
+            else if (ty >= 116 && ty <= 176)
                 jvlt_set_screen(SCREEN_FLIP_COIN);
         } else if (ev->type == INPUT_SWIPE_RIGHT) {
             if (m == NULL)
@@ -242,32 +252,33 @@ void ltapp_handle_input(const jvlt_input_event_t *ev) {
         if (ev->type == INPUT_TAP) {
             const int16_t tx = ev->x0;
             const int16_t ty = ev->y0;
-            // Starting life "<": x∈[0,80], y∈[68,116]
-            if (ty >= 68 && ty <= 116 && tx >= 0 && tx <= 80)
+            // Starting life "<": x∈[0,80], y∈[55,110]
+            if (ty >= 55 && ty <= 110 && tx >= 0 && tx <= 80)
                 jvlt_match_cycle_starting_life(-1);
-            // Starting life ">": x∈[160,240], y∈[68,116]
-            else if (ty >= 68 && ty <= 116 && tx >= 160 && tx <= 240)
+            // Starting life ">": x∈[160,240], y∈[55,110]
+            else if (ty >= 55 && ty <= 110 && tx >= 160 && tx <= 240)
                 jvlt_match_cycle_starting_life(1);
-            // Opponents "<": x∈[0,80], y∈[132,180]
-            else if (ty >= 132 && ty <= 180 && tx >= 0 && tx <= 80) {
+            // Opponents "<": x∈[0,80], y∈[126,181]
+            else if (ty >= 126 && ty <= 181 && tx >= 0 && tx <= 80) {
                 static const int16_t opps[] = {1, 2, 3, 4, 5};
                 uint8_t opp = m ? m->player_count - 1 : 3;
                 jvlt_match_set_opponents((uint8_t)jvlt_list_cycle(opps, 5, opp, -1));
             }
-            // Opponents ">": x∈[160,240], y∈[132,180]
-            else if (ty >= 132 && ty <= 180 && tx >= 160 && tx <= 240) {
+            // Opponents ">": x∈[160,240], y∈[126,181]
+            else if (ty >= 126 && ty <= 181 && tx >= 160 && tx <= 240) {
                 static const int16_t opps[] = {1, 2, 3, 4, 5};
                 uint8_t opp = m ? m->player_count - 1 : 3;
                 jvlt_match_set_opponents((uint8_t)jvlt_list_cycle(opps, 5, opp, 1));
             }
-            // Start match: below y=188
-            else if (ty >= 188) {
+            // Start match: y≥192
+            else if (ty >= 192) {
                 int16_t life = m ? m->starting_life : 40;
                 uint8_t opp = m ? m->player_count - 1 : 3;
                 jvlt_match_begin_solo(opp, life);
                 jvlt_set_screen(SCREEN_MATCH);
             }
         } else if (ev->type == INPUT_SWIPE_RIGHT) {
+            jvlt_match_end();
             jvlt_set_screen(SCREEN_HOME);
         }
         break;
@@ -416,44 +427,67 @@ void ltapp_handle_input(const jvlt_input_event_t *ev) {
         const jvlt_player_t *opp = &m->players[m->cmd_sel_opp];
         if (ev->type == INPUT_TAP) {
             int16_t tx = ev->x, ty = ev->y;
-            // Tap on name area (top 48px) → open keyboard to rename
-            if (ty <= 48) {
+            // Edit opponent name: y∈[0,56]
+            if (ty <= 56) {
                 ltapp_kbd_open(opp->name, ltapp_rename_selected_opp);
                 break;
             }
             uint8_t ncmd = opp->num_commanders;
-            // Add/remove commander button (bottom area)
-            if (ty >= 192) {
+            // Add/remove commander button: y≥220
+            if (ty >= 220) {
                 if (ncmd < 2)
                     jvlt_match_set_num_commanders(m->cmd_sel_opp, 2);
                 else
                     jvlt_match_set_num_commanders(m->cmd_sel_opp, 1);
                 break;
             }
-            // Commander +/- circles
             if (ncmd == 1) {
-                // Single commander: cx_minus=60, cx_plus=180, cy=120, r=60
-                int16_t dy = ty - 120;
-                int16_t dx_m = tx - 60;
-                int16_t dx_p = tx - 180;
-                if (dx_m * dx_m + dy * dy <= 60 * 60)
+                // Edit cmd name: x∈[70,170], y∈[80,128]
+                if (tx >= 70 && tx <= 170 && ty >= 80 && ty <= 128) {
+                    ltapp_kbd_open(opp->cmd_name[0], ltapp_rename_cmd_0);
+                    break;
+                }
+                // Minus: cx=40, cy=120, r=30
+                int16_t dx = tx - 40, dy = ty - 120;
+                if (dx * dx + dy * dy <= 30 * 30)
                     jvlt_match_add_cmd_dmg(m->cmd_sel_opp, 0, -1);
-                else if (dx_p * dx_p + dy * dy <= 60 * 60)
+                // Plus: cx=200, cy=120, r=30
+                else if ((tx-200)*(tx-200) + (ty-120)*(ty-120) <= 30*30)
                     jvlt_match_add_cmd_dmg(m->cmd_sel_opp, 0, 1);
             } else {
-                // Two commanders: cy0=96, cy1=160, r=30
-                int16_t cy[2] = {96, 160};
-                for (int c = 0; c < 2; c++) {
-                    int16_t dy = ty - cy[c];
-                    int16_t dx_m = tx - 60;
-                    int16_t dx_p = tx - 180;
-                    if (dx_m * dx_m + dy * dy <= 30 * 30) {
-                        jvlt_match_add_cmd_dmg(m->cmd_sel_opp, c, -1);
-                        break;
-                    } else if (dx_p * dx_p + dy * dy <= 30 * 30) {
-                        jvlt_match_add_cmd_dmg(m->cmd_sel_opp, c, 1);
-                        break;
-                    }
+                // 1st commander
+                // Edit cmd 1st name: x∈[70,170], y∈[64,112]
+                if (tx >= 70 && tx <= 170 && ty >= 64 && ty <= 112) {
+                    ltapp_kbd_open(opp->cmd_name[0], ltapp_rename_cmd_0);
+                    break;
+                }
+                // Minus 1st: cx=40, cy=104, r=30
+                int16_t dx = tx - 40, dy = ty - 104;
+                if (dx * dx + dy * dy <= 30 * 30) {
+                    jvlt_match_add_cmd_dmg(m->cmd_sel_opp, 0, -1);
+                    break;
+                }
+                // Plus 1st: cx=200, cy=104, r=30
+                if ((tx-200)*(tx-200) + (ty-104)*(ty-104) <= 30*30) {
+                    jvlt_match_add_cmd_dmg(m->cmd_sel_opp, 0, 1);
+                    break;
+                }
+                // 2nd commander
+                // Edit cmd 2nd name: x∈[70,170], y∈[128,176]
+                if (tx >= 70 && tx <= 170 && ty >= 128 && ty <= 176) {
+                    ltapp_kbd_open(opp->cmd_name[1], ltapp_rename_cmd_1);
+                    break;
+                }
+                // Minus 2nd: cx=40, cy=168, r=30
+                dx = tx - 40; dy = ty - 168;
+                if (dx * dx + dy * dy <= 30 * 30) {
+                    jvlt_match_add_cmd_dmg(m->cmd_sel_opp, 1, -1);
+                    break;
+                }
+                // Plus 2nd: cx=200, cy=168, r=30
+                if ((tx-200)*(tx-200) + (ty-168)*(ty-168) <= 30*30) {
+                    jvlt_match_add_cmd_dmg(m->cmd_sel_opp, 1, 1);
+                    break;
                 }
             }
         } else if (ev->type == INPUT_SWIPE_RIGHT) {
@@ -465,12 +499,12 @@ void ltapp_handle_input(const jvlt_input_event_t *ev) {
     case SCREEN_MATCH_POISON_DAMAGE: {
         if (ev->type == INPUT_TAP) {
             int tx = ev->x, ty = ev->y;
-            // Minus poison: circle center (60, 156), r=52
-            int dx = tx - 60, dy = ty - 156;
-            if (dx * dx + dy * dy <= 52 * 52)
+            // Minus poison: cx=30, cy=160, r=60
+            int dx = tx - 30, dy = ty - 160;
+            if (dx * dx + dy * dy <= 60 * 60)
                 jvlt_match_add_poison(-1);
-            // Plus poison: circle center (180, 156), r=52
-            else if ((tx-180)*(tx-180) + (ty-156)*(ty-156) <= 52*52)
+            // Plus poison: cx=210, cy=160, r=60
+            else if ((tx-210)*(tx-210) + (ty-160)*(ty-160) <= 60*60)
                 jvlt_match_add_poison(1);
         } else if (ev->type == INPUT_SWIPE_RIGHT) {
             jvlt_set_screen(SCREEN_MATCH_CMD_DAMAGE);

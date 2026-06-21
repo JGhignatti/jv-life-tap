@@ -13,6 +13,7 @@ typedef struct {
     int16_t life;
     uint8_t poison;                              // 0–10
     uint8_t num_commanders;                      // 1 or 2
+    char    cmd_name[JVLT_MAX_COMMANDERS][12];   // commander names
     int16_t cmd_dmg[JVLT_MAX_PLAYERS][JVLT_MAX_COMMANDERS];
 } jvlt_player_t;
 
@@ -64,6 +65,7 @@ void jvlt_match_set_num_commanders(uint8_t opp, uint8_t count);
 void jvlt_match_nav_opponent(int delta);              // cycle cmd_sel_opp
 void jvlt_match_select_opponent(uint8_t opp_idx);     // set cmd_sel_opp directly
 void jvlt_match_rename_player(uint8_t player_idx, const char *name);
+void jvlt_match_rename_commander(uint8_t player_idx, uint8_t cmd_idx, const char *name);
 void jvlt_match_reset_counters(void);                 // reset life/poison/cmd_dmg, keep match active
 ```
 

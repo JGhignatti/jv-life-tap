@@ -18,11 +18,15 @@ void jvlt_match_begin_solo(uint8_t opponents, int16_t starting_life) {
     strncpy(g_match.players[0].name, g_player_name, sizeof(g_match.players[0].name) - 1);
     g_match.players[0].life = starting_life;
     g_match.players[0].num_commanders = 1;
+    snprintf(g_match.players[0].cmd_name[0], sizeof(g_match.players[0].cmd_name[0]), "cmd_1");
+    snprintf(g_match.players[0].cmd_name[1], sizeof(g_match.players[0].cmd_name[1]), "cmd_2");
 
     for (int i = 1; i <= opponents; i++) {
         snprintf(g_match.players[i].name, sizeof(g_match.players[i].name), "opp_%d", i);
         g_match.players[i].life = starting_life;
         g_match.players[i].num_commanders = 1;
+        snprintf(g_match.players[i].cmd_name[0], sizeof(g_match.players[i].cmd_name[0]), "cmd_1");
+        snprintf(g_match.players[i].cmd_name[1], sizeof(g_match.players[i].cmd_name[1]), "cmd_2");
     }
     g_dirty = true;
 }
@@ -70,8 +74,10 @@ void jvlt_match_set_num_commanders(uint8_t opp, uint8_t count) {
     if (!g_match.active) return;
     if (count < 1) count = 1;
     if (count > JVLT_MAX_COMMANDERS) count = JVLT_MAX_COMMANDERS;
-    if (count < g_match.players[opp].num_commanders)
+    if (count < g_match.players[opp].num_commanders) {
         g_match.players[g_match.my_index].cmd_dmg[opp][1] = 0;
+        snprintf(g_match.players[opp].cmd_name[1], sizeof(g_match.players[opp].cmd_name[1]), "cmd_2");
+    }
     g_match.players[opp].num_commanders = count;
     g_dirty = true;
 }
@@ -96,6 +102,14 @@ void jvlt_match_rename_player(uint8_t player_idx, const char *name) {
     if (!g_match.active || player_idx >= g_match.player_count) return;
     strncpy(g_match.players[player_idx].name, name, sizeof(g_match.players[0].name) - 1);
     g_match.players[player_idx].name[sizeof(g_match.players[0].name) - 1] = '\0';
+    g_dirty = true;
+}
+
+void jvlt_match_rename_commander(uint8_t player_idx, uint8_t cmd_idx, const char *name) {
+    if (!g_match.active || player_idx >= g_match.player_count || cmd_idx >= JVLT_MAX_COMMANDERS) return;
+    if (!name || name[0] == '\0') return;
+    strncpy(g_match.players[player_idx].cmd_name[cmd_idx], name, sizeof(g_match.players[0].cmd_name[0]) - 1);
+    g_match.players[player_idx].cmd_name[cmd_idx][sizeof(g_match.players[0].cmd_name[0]) - 1] = '\0';
     g_dirty = true;
 }
 
